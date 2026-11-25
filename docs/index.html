@@ -1,0 +1,479 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Quote Form Data</title>
+<meta name="description" content="Proposed fields and metadata for a solar quote request form: database integrity, search and AI uses.">
+<style>
+  :root {
+    --bg: #f6f7f4;
+    --surface: #ffffff;
+    --surface-2: #eef1ea;
+    --text: #1d2420;
+    --muted: #5b665f;
+    --border: #d9ded6;
+    --accent: #1f6f4a;
+    --accent-soft: #dcefe4;
+    --sun: #b8860b;
+    --sun-soft: #fbf0d4;
+    --info: #2b5c8a;
+    --info-soft: #dfeaf5;
+    --warn: #9a3b2a;
+    --warn-soft: #f8e1dc;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #121614; --surface: #1a201d; --surface-2: #222a26; --text: #e6ebe7;
+      --muted: #9aa69f; --border: #313b36; --accent: #6fcf9a; --accent-soft: #1f3a2c;
+      --sun: #e6b84a; --sun-soft: #3a3120; --info: #8fb9e3; --info-soft: #1e2f40;
+      --warn: #ef9a88; --warn-soft: #3f2420; color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #121614; --surface: #1a201d; --surface-2: #222a26; --text: #e6ebe7;
+    --muted: #9aa69f; --border: #313b36; --accent: #6fcf9a; --accent-soft: #1f3a2c;
+    --sun: #e6b84a; --sun-soft: #3a3120; --info: #8fb9e3; --info-soft: #1e2f40;
+    --warn: #ef9a88; --warn-soft: #3f2420; color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font: 16px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  .wrap { max-width: 1040px; margin: 0 auto; padding: 0 16px; }
+  header { padding: 32px 0 8px; }
+  header p { margin: 4px 0 0; color: var(--muted); }
+  h1 { margin: 0; font-size: 1.6rem; line-height: 1.25; }
+  h2 { font-size: 1.2rem; margin: 0 0 12px; }
+  h3 { font-size: 1rem; margin: 0 0 8px; }
+  code { font-family: var(--mono); font-size: .88em; }
+
+  /* Tabs */
+  .tabs {
+    position: sticky; top: 0; z-index: 5; background: var(--bg);
+    display: flex; gap: 4px; overflow-x: auto; scrollbar-width: none;
+    border-bottom: 1px solid var(--border); margin-top: 16px;
+  }
+  .tabs::-webkit-scrollbar { display: none; }
+  .tabs button {
+    flex: none; border: 0; background: none; color: var(--muted); cursor: pointer;
+    font: inherit; font-weight: 600; padding: 12px 14px; border-bottom: 3px solid transparent;
+  }
+  .tabs button[aria-selected="true"] { color: var(--accent); border-bottom-color: var(--accent); }
+  .tabs button:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+  [role="tabpanel"] { padding: 24px 0 48px; }
+  [role="tabpanel"][hidden] { display: none; }
+
+  /* Cards and grids */
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 18px; }
+  .grid { display: grid; gap: 16px; }
+  .cols-2 { grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+  .stats { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); margin-bottom: 16px; }
+  .stat .num { font-size: 1.9rem; font-weight: 700; line-height: 1.1; }
+  .stat .label { color: var(--muted); font-size: .9rem; }
+  .card ul, .card ol { margin: 0; padding-left: 20px; }
+  .card li + li { margin-top: 6px; }
+  .note { color: var(--muted); font-size: .9rem; margin: 12px 0 0; }
+
+  /* Badges */
+  .badge {
+    display: inline-block; font-size: .72rem; font-weight: 700; letter-spacing: .02em;
+    padding: 1px 7px; border-radius: 999px; white-space: nowrap; vertical-align: 1px;
+  }
+  .b-new { background: var(--accent-soft); color: var(--accent); }
+  .b-changed { background: var(--sun-soft); color: var(--sun); }
+  .b-gap { background: var(--warn-soft); color: var(--warn); }
+  .b-int { background: var(--accent-soft); color: var(--accent); }
+  .b-search { background: var(--info-soft); color: var(--info); }
+  .b-ai { background: var(--sun-soft); color: var(--sun); }
+  .b-req { background: var(--surface-2); color: var(--muted); }
+
+  /* Form lists */
+  .fieldlist { list-style: none; padding: 0 !important; margin: 0; }
+  .fieldlist li { display: flex; justify-content: space-between; gap: 10px; padding: 7px 0; border-top: 1px solid var(--border); margin: 0 !important; }
+  .fieldlist li:first-child { border-top: 0; }
+  .fieldlist .sub { padding-left: 16px; color: var(--muted); }
+  .group { font-size: .78rem; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-weight: 700; margin: 16px 0 2px; }
+  .group:first-of-type { margin-top: 0; }
+
+  /* Field table */
+  .filters { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+  .filters button {
+    font: inherit; font-size: .9rem; border: 1px solid var(--border); background: var(--surface);
+    color: var(--text); border-radius: 999px; padding: 5px 12px; cursor: pointer;
+  }
+  .filters button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--bg); }
+  table { width: 100%; border-collapse: collapse; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+  th, td { text-align: left; padding: 10px 12px; border-top: 1px solid var(--border); vertical-align: top; font-size: .93rem; }
+  th { background: var(--surface-2); font-size: .82rem; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); border-top: 0; }
+  td:first-child { font-weight: 600; }
+  td .badge + .badge { margin-left: 4px; }
+  @media (max-width: 680px) {
+    table, tbody, tr, td { display: block; width: 100%; }
+    thead { display: none; }
+    table { border: 0; background: none; }
+    tr { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; margin-bottom: 10px; padding: 6px 0; }
+    td { border: 0; padding: 4px 14px; }
+    td[data-label]:not(:first-child)::before {
+      content: attr(data-label); display: block; font-size: .72rem; text-transform: uppercase;
+      letter-spacing: .05em; color: var(--muted); font-weight: 700;
+    }
+  }
+
+  /* Sample record */
+  pre {
+    margin: 0; font-family: var(--mono); font-size: .82rem; line-height: 1.5;
+    background: var(--surface-2); border-radius: 8px; padding: 12px; overflow-x: auto; white-space: pre;
+  }
+  .hl { background: var(--accent-soft); color: var(--accent); border-radius: 3px; }
+  .hl-dup { background: var(--sun-soft); color: var(--sun); border-radius: 3px; }
+
+  /* Data flow */
+  .flow { display: grid; gap: 28px; grid-template-columns: repeat(4, 1fr); align-items: stretch; }
+  .flow .step { position: relative; }
+  .flow .step:not(:last-child)::after {
+    content: "→"; position: absolute; right: -22px; top: 50%; transform: translateY(-50%);
+    color: var(--muted); font-size: 1.3rem;
+  }
+  .flow .n {
+    display: inline-flex; width: 24px; height: 24px; border-radius: 50%; align-items: center; justify-content: center;
+    background: var(--accent); color: var(--bg); font-size: .8rem; font-weight: 700; margin-bottom: 6px;
+  }
+  .flow ul { font-size: .9rem; }
+  .uses { margin-top: 16px; }
+  @media (max-width: 860px) {
+    .flow { grid-template-columns: 1fr; gap: 26px; }
+    .flow .step:not(:last-child)::after { content: "↓"; right: auto; left: 50%; top: auto; bottom: -26px; transform: translateX(-50%); }
+  }
+  footer { color: var(--muted); font-size: .85rem; padding: 0 0 32px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Quote request form: data proposal</h1>
+    <p>Extra fields and metadata for database integrity, search and AI use. All sample data is fake.</p>
+  </header>
+
+  <nav class="tabs" role="tablist" aria-label="Sections">
+    <button role="tab" id="tab-overview" aria-controls="overview" aria-selected="true">Overview</button>
+    <button role="tab" id="tab-compare" aria-controls="compare" aria-selected="false" tabindex="-1">Current vs. proposed</button>
+    <button role="tab" id="tab-fields" aria-controls="fields" aria-selected="false" tabindex="-1">Field table</button>
+    <button role="tab" id="tab-sample" aria-controls="sample" aria-selected="false" tabindex="-1">Sample record</button>
+    <button role="tab" id="tab-flow" aria-controls="flow" aria-selected="false" tabindex="-1">Data flow</button>
+  </nav>
+
+  <!-- ============ OVERVIEW ============ -->
+  <section role="tabpanel" id="overview" aria-labelledby="tab-overview">
+    <div class="grid stats">
+      <div class="card stat"><div class="num">14</div><div class="label">fields on the form today, including referral and scheduling</div></div>
+      <div class="card stat"><div class="num">0</div><div class="label">automatic fields visible (ID, source, form version); some may exist behind the scenes</div></div>
+      <div class="card stat"><div class="num">8</div><div class="label">proposed new questions, all optional</div></div>
+      <div class="card stat"><div class="num">11</div><div class="label">proposed fields captured or derived automatically</div></div>
+    </div>
+
+    <div class="grid cols-2">
+      <div class="card">
+        <h2>The problem</h2>
+        <ul>
+          <li>The form collects contact details and interest, but not what a quote depends on: home ownership, utility, bill or roof.</li>
+          <li>The form's own text says a proposal may be delayed if the utility bill isn't provided, yet the form never asks for it.</li>
+          <li>Phone, email and address are free text, so the same person can come in twice and look like two leads.</li>
+          <li>Referrals are matched on a typed name only, which is the weakest possible key.</li>
+          <li>The appointment time ("11AM") is stored without a time zone. "None of these dates" leaves the record with no date and no status.</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h2>Recommendation</h2>
+        <ol>
+          <li><strong>Capture automatically first.</strong> Add a stable submission ID, a UTC timestamp, campaign source and form version. This needs no extra questions for the visitor.</li>
+          <li><strong>Clean on arrival.</strong> Normalize phone, email and address, then flag likely duplicates. Link them to the earlier record; never delete.</li>
+          <li><strong>Ask a few optional questions that drive the quote:</strong> homeowner, utility, monthly bill (or a bill upload), roof age, timeline.</li>
+          <li><strong>Store codes, not labels.</strong> Fixed values for dropdowns make search, reporting and AI features reliable.</li>
+        </ol>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:16px">
+      <h2>Why it matters</h2>
+      <p>Automatic fields (submission ID, source, timestamp) and light normalization of phone, email, and address keep records consistent from the start. A few optional questions give us the inputs a quote needs, and storing codes instead of labels keeps the data stable for reporting as the form changes.</p>
+      <p class="note">About the current form: it runs on Cognito Forms. Fields were recorded by hand from the live page in November 2026. Answer choices for "solar products" and "how did you hear", any consent text, and the submit label were not captured.</p>
+    </div>
+  </section>
+
+  <!-- ============ CURRENT VS PROPOSED ============ -->
+  <section role="tabpanel" id="compare" aria-labelledby="tab-compare" hidden>
+    <div class="grid cols-2">
+      <div class="card">
+        <h2>Current form</h2>
+        <div class="group">Contact</div>
+        <ul class="fieldlist">
+          <li>First name <span class="badge b-req">required</span></li>
+          <li>Last name <span class="badge b-req">required</span></li>
+          <li>Email <span class="badge b-req">required</span></li>
+          <li>Phone <span class="badge b-req">required</span></li>
+        </ul>
+        <div class="group">Address</div>
+        <ul class="fieldlist">
+          <li>Street address <span class="badge b-req">required</span></li>
+          <li>City <span class="badge b-req">required</span></li>
+          <li>State <span class="badge b-req">likely required</span></li>
+          <li>ZIP code <span class="badge b-req">required</span></li>
+        </ul>
+        <div class="group">Interest</div>
+        <ul class="fieldlist">
+          <li>Which solar products are you interested in? <span class="badge b-req">required</span></li>
+          <li>How did you hear about StraightUp Solar? <span class="badge b-req">required</span></li>
+          <li class="sub">Referrer's name (if "friend is a customer") <span class="badge b-gap">name only</span></li>
+        </ul>
+        <div class="group">Scheduling</div>
+        <ul class="fieldlist">
+          <li>Online presentation date (weekdays) <span class="badge b-req">required</span></li>
+          <li class="sub">"None of these dates work for me" <span class="badge b-gap">no status</span></li>
+          <li>Online presentation time <span class="badge b-gap">no time zone</span></li>
+        </ul>
+        <div class="group">Behind the scenes</div>
+        <ul class="fieldlist">
+          <li>Submission ID, source, form version <span class="badge b-gap">not visible</span></li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h2>Proposed form</h2>
+        <div class="group">Contact</div>
+        <ul class="fieldlist">
+          <li>First name, last name, email, phone <span class="badge b-changed">cleaned</span></li>
+          <li>Preferred contact method (call / text / email) <span class="badge b-new">new</span></li>
+          <li>Consent to calls and texts, with wording version <span class="badge b-new">new</span></li>
+        </ul>
+        <div class="group">Property</div>
+        <ul class="fieldlist">
+          <li>Street, city, state, ZIP <span class="badge b-changed">cleaned</span></li>
+          <li>Do you own this home? (own / rent / buying) <span class="badge b-new">new</span></li>
+          <li>Roof age (under 10 / 10–20 / 20+ yrs / not sure) <span class="badge b-new">new</span></li>
+        </ul>
+        <div class="group">Energy</div>
+        <ul class="fieldlist">
+          <li>Electric utility (fixed list + other) <span class="badge b-new">new</span></li>
+          <li>Average monthly bill (ranges) <span class="badge b-new">new</span></li>
+          <li>Upload a recent bill (optional) <span class="badge b-new">new</span></li>
+        </ul>
+        <div class="group">Interest</div>
+        <ul class="fieldlist">
+          <li>Products of interest, stored as codes <span class="badge b-changed">changed</span></li>
+          <li>Timeline (ASAP / 3–6 mo / 6–12 mo / researching) <span class="badge b-new">new</span></li>
+          <li>How did you hear, stored as codes <span class="badge b-changed">changed</span></li>
+          <li class="sub">Referrer's email or phone, not just name <span class="badge b-changed">changed</span></li>
+        </ul>
+        <div class="group">Scheduling</div>
+        <ul class="fieldlist">
+          <li>Presentation date + time, stored as UTC + time zone <span class="badge b-changed">changed</span></li>
+          <li class="sub">"None work" sets status <code>needs_callback</code> <span class="badge b-changed">changed</span></li>
+        </ul>
+        <div class="group">Behind the scenes</div>
+        <ul class="fieldlist">
+          <li>ID, timestamps, source/UTM, form version, duplicate links <span class="badge b-new">new</span></li>
+        </ul>
+      </div>
+    </div>
+    <p class="note">All new questions are optional, consent included, so nobody is blocked from requesting a quote. Every field and its purpose is on the Field table tab.</p>
+  </section>
+
+  <!-- ============ FIELD TABLE ============ -->
+  <section role="tabpanel" id="fields" aria-labelledby="tab-fields" hidden>
+    <div class="filters" role="group" aria-label="Filter fields">
+      <button type="button" data-filter="all" aria-pressed="true">All</button>
+      <button type="button" data-filter="asked" aria-pressed="false">Asked</button>
+      <button type="button" data-filter="auto" aria-pressed="false">Captured automatically</button>
+      <button type="button" data-filter="checker" aria-pressed="false">Done by the checker today</button>
+    </div>
+    <table>
+      <thead><tr><th>Field</th><th>Source</th><th>Used for</th><th>How the data is used</th></tr></thead>
+      <tbody id="field-rows">
+        <tr data-kind="asked"><td>homeowner_status</td><td data-label="Source">Asked</td><td data-label="Used for"><span class="badge b-int">Integrity</span><span class="badge b-ai">AI</span></td><td data-label="How">Qualifies the lead before a sales call. Renters can be routed to a different offer.</td></tr>
+        <tr data-kind="asked"><td>utility_code</td><td data-label="Source">Asked (fixed list)</td><td data-label="Used for"><span class="badge b-int">Integrity</span><span class="badge b-search">Search</span><span class="badge b-ai">AI</span></td><td data-label="How">Picks the right rate plan and incentive rules. A fixed list avoids ten spellings of the same utility.</td></tr>
+        <tr data-kind="asked"><td>monthly_bill_range</td><td data-label="Source">Asked</td><td data-label="Used for"><span class="badge b-ai">AI</span><span class="badge b-search">Search</span></td><td data-label="How">First system-size and savings estimate, before the bill arrives.</td></tr>
+        <tr data-kind="asked"><td>utility_bill_file</td><td data-label="Source">Asked (optional upload)</td><td data-label="Used for"><span class="badge b-ai">AI</span></td><td data-label="How">AI reads usage (kWh) and rate class from the bill, reviewed by staff. This removes the delay the form already warns about.</td></tr>
+        <tr data-kind="asked"><td>roof_age_range</td><td data-label="Source">Asked</td><td data-label="Used for"><span class="badge b-ai">AI</span></td><td data-label="How">Flags homes that may need a new roof before install, so the quote is realistic.</td></tr>
+        <tr data-kind="asked"><td>timeline</td><td data-label="Source">Asked</td><td data-label="Used for"><span class="badge b-ai">AI</span><span class="badge b-search">Search</span></td><td data-label="How">Lead priority and follow-up cadence.</td></tr>
+        <tr data-kind="asked"><td>preferred_contact</td><td data-label="Source">Asked</td><td data-label="Used for"><span class="badge b-int">Integrity</span></td><td data-label="How">Sales reaches people the way they asked to be reached.</td></tr>
+        <tr data-kind="asked"><td>contact_consent + consent_text_version</td><td data-label="Source">Asked (checkbox)</td><td data-label="Used for"><span class="badge b-int">Integrity</span></td><td data-label="How">Records exactly what the person agreed to and when, before calls or texts.</td></tr>
+        <tr data-kind="asked"><td>referrer_email / referrer_phone</td><td data-label="Source">Asked (if referral)</td><td data-label="Used for"><span class="badge b-int">Integrity</span><span class="badge b-search">Search</span></td><td data-label="How">Matches the referrer to an existing customer ID instead of a typed name, so referral credit is reliable.</td></tr>
+        <tr data-kind="asked"><td>product_codes, heard_about_code</td><td data-label="Source">Asked (existing, as codes)</td><td data-label="Used for"><span class="badge b-int">Integrity</span><span class="badge b-search">Search</span></td><td data-label="How">Stable codes (e.g. <code>battery</code>) survive label changes and keep reports comparable over time.</td></tr>
+        <tr data-kind="auto checker"><td>submission_id</td><td data-label="Source">Automatic</td><td data-label="Used for"><span class="badge b-int">Integrity</span></td><td data-label="How">One stable ID per submission, the same on every re-run. The key that CRM, search and AI records all point to.</td></tr>
+        <tr data-kind="auto checker"><td>received_at (UTC)</td><td data-label="Source">Automatic</td><td data-label="Used for"><span class="badge b-int">Integrity</span><span class="badge b-search">Search</span></td><td data-label="How">One time standard for ordering, response-time reports and deciding which duplicate came first.</td></tr>
+        <tr data-kind="auto checker"><td>source</td><td data-label="Source">Automatic</td><td data-label="Used for"><span class="badge b-search">Search</span><span class="badge b-ai">AI</span></td><td data-label="How">Which channel the lead came from. Defaults to <code>web_form</code>.</td></tr>
+        <tr data-kind="auto"><td>utm_source / medium / campaign, landing_page</td><td data-label="Source">Automatic (hidden fields)</td><td data-label="Used for"><span class="badge b-search">Search</span><span class="badge b-ai">AI</span></td><td data-label="How">Measured attribution alongside the self-reported "how did you hear".</td></tr>
+        <tr data-kind="auto"><td>form_version</td><td data-label="Source">Automatic</td><td data-label="Used for"><span class="badge b-int">Integrity</span></td><td data-label="How">Shows which questions existed when a record was created, so a blank answer isn't misread.</td></tr>
+        <tr data-kind="auto checker"><td>email, phone (E.164)</td><td data-label="Source">Derived (cleaned)</td><td data-label="Used for"><span class="badge b-int">Integrity</span><span class="badge b-search">Search</span></td><td data-label="How">One format, so lookups and matching work: <code>+13145550101</code>.</td></tr>
+        <tr data-kind="auto checker"><td>street, state, zip, address_key</td><td data-label="Source">Derived (cleaned)</td><td data-label="Used for"><span class="badge b-int">Integrity</span><span class="badge b-search">Search</span></td><td data-label="How">USPS-style abbreviations and 5-digit ZIP. A production version would verify addresses with an address API.</td></tr>
+        <tr data-kind="auto"><td>latitude, longitude, county</td><td data-label="Source">Derived (later step)</td><td data-label="Used for"><span class="badge b-search">Search</span><span class="badge b-ai">AI</span></td><td data-label="How">Map search, territory routing, and solar-potential or roof lookups.</td></tr>
+        <tr data-kind="auto checker"><td>flags (e.g. outside_service_area)</td><td data-label="Source">Derived</td><td data-label="Used for"><span class="badge b-int">Integrity</span></td><td data-label="How">Bad phone, email or ZIP and out-of-area addresses go to a review queue instead of a salesperson.</td></tr>
+        <tr data-kind="auto checker"><td>duplicate_of, matched_on</td><td data-label="Source">Derived</td><td data-label="Used for"><span class="badge b-int">Integrity</span><span class="badge b-search">Search</span></td><td data-label="How">Links a repeat submission to the first one and says why (email, phone, address). Nothing is merged or deleted automatically.</td></tr>
+        <tr data-kind="auto"><td>appointment_at (UTC) + time_zone, scheduling_status</td><td data-label="Source">Derived</td><td data-label="Used for"><span class="badge b-int">Integrity</span></td><td data-label="How">Unambiguous appointment time. "None of these dates" becomes <code>needs_callback</code>, so it stays in the queue.</td></tr>
+      </tbody>
+    </table>
+    <p class="note" id="field-count"></p>
+  </section>
+
+  <!-- ============ SAMPLE RECORD ============ -->
+  <section role="tabpanel" id="sample" aria-labelledby="tab-sample" hidden>
+    <div class="grid cols-2">
+      <div class="card">
+        <h2>Before: as submitted</h2>
+        <p class="note" style="margin:0 0 10px">A second request from the same (fake) person, a week after their first.</p>
+<pre>received_at: 2026-11-09T18:30:00Z
+first_name:  Dana
+last_name:   Whitfield
+email:       DANA.WHITFIELD@example.com
+phone:       314-555-0199
+street:      1200 Maple Avenue
+city:        St. Louis
+state:       MO
+zip:         63110
+source:      web_form</pre>
+      </div>
+      <div class="card">
+        <h2>After: checker output</h2>
+        <p class="note" style="margin:0 0 10px">Exact output of <code>scripts/quote_check.py</code> for this row.</p>
+<pre>{
+  "submission_id": "Q-b6ecf284cc45",
+  "received_at": "2026-11-09T18:30:00Z",
+  "source": "web_form",
+  "first_name": "Dana",
+  "last_name": "Whitfield",
+  "email": "<span class="hl">dana.whitfield@example.com</span>",
+  "phone": "<span class="hl">+13145550199</span>",
+  "street": "<span class="hl">1200 MAPLE AVE</span>",
+  "city": "<span class="hl">ST LOUIS</span>",
+  "state": "MO",
+  "zip": "63110",
+  "address_key": "1200 MAPLE AVE|63110",
+  "flags": [],
+  "matched_on": [<span class="hl-dup">"address_key", "email"</span>],
+  "duplicate_of": "<span class="hl-dup">Q-0a1f8f6e79f1</span>"
+}</pre>
+      </div>
+    </div>
+    <div class="card" style="margin-top:16px">
+      <h3>What changed</h3>
+      <ul>
+        <li><span class="badge b-int">cleaned</span> Email lowercased, phone in E.164, "Avenue" became "AVE", city uppercased without the period.</li>
+        <li><span class="badge b-ai">linked</span> The email and street+ZIP match the first request (<code>Q-0a1f8f6e79f1</code>), so this one is marked a likely duplicate. The phone is different, which is useful for sales to know, so both records are kept.</li>
+        <li><span class="badge b-search">stable</span> The ID is a hash of the cleaned values and time, so a re-run gives the same ID.</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ============ DATA FLOW ============ -->
+  <section role="tabpanel" id="flow" aria-labelledby="tab-flow" hidden>
+    <div class="flow">
+      <div class="card step">
+        <div class="n">1</div>
+        <h3>Form</h3>
+        <ul>
+          <li>Visitor answers</li>
+          <li>Hidden fields: UTM, landing page, form version</li>
+          <li>Optional bill upload</li>
+        </ul>
+      </div>
+      <div class="card step">
+        <div class="n">2</div>
+        <h3>Checker</h3>
+        <ul>
+          <li>Normalize phone, email, address</li>
+          <li>Stable ID + UTC time</li>
+          <li>Flags + duplicate links</li>
+        </ul>
+      </div>
+      <div class="card step">
+        <div class="n">3</div>
+        <h3>CRM</h3>
+        <ul>
+          <li>One record per person and property</li>
+          <li>Duplicates linked, not deleted</li>
+          <li>Flagged leads go to review</li>
+        </ul>
+      </div>
+      <div class="card step">
+        <div class="n">4</div>
+        <h3>Search &amp; AI</h3>
+        <ul>
+          <li>Find by phone, email, address, campaign, utility</li>
+          <li>AI features (below)</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="grid cols-2 uses">
+      <div class="card">
+        <h3><span class="badge b-search">Search</span> What clean data makes possible</h3>
+        <ul>
+          <li>Find a caller's request by any phone format.</li>
+          <li>See every request from one household, linked by <code>duplicate_of</code>.</li>
+          <li>Filter leads by utility, ZIP, campaign or timeline.</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3><span class="badge b-ai">AI</span> Uses, each with a person reviewing</h3>
+        <ul>
+          <li>Read usage and rate from an uploaded bill.</li>
+          <li>Score and route leads using homeowner, roof, bill and timeline.</li>
+          <li>Draft a first proposal from structured fields.</li>
+          <li>Answer staff questions over past quotes, grounded in stable IDs.</li>
+        </ul>
+      </div>
+    </div>
+    <p style="margin-top:16px">The form captures visitor answers plus hidden source and version fields. A checker normalizes contact details, assigns a stable ID and UTC timestamp, and flags possible duplicates. CRM keeps one record per person and property, linking duplicates instead of deleting them and sending flagged leads for review. Search and AI can then look up requests by phone, address, campaign or utility, and use structured fields to draft proposals or answer questions, always with a person reviewing.</p>
+  </section>
+
+  <footer>Sample data is fake: 555-01xx phone numbers and example.com emails. Code: <code>scripts/quote_check.py</code> in this repository.</footer>
+</div>
+
+<script>
+  // Tabs: click, arrow keys, and #hash links (e.g. index.html#fields).
+  const tabs = [...document.querySelectorAll('[role="tab"]')];
+  function selectTab(tab, focus) {
+    tabs.forEach(t => {
+      const on = t === tab;
+      t.setAttribute('aria-selected', on);
+      t.tabIndex = on ? 0 : -1;
+      document.getElementById(t.getAttribute('aria-controls')).hidden = !on;
+    });
+    if (focus) tab.focus();
+    history.replaceState(null, '', '#' + tab.getAttribute('aria-controls'));
+  }
+  tabs.forEach((tab, i) => {
+    tab.addEventListener('click', () => selectTab(tab));
+    tab.addEventListener('keydown', e => {
+      const move = { ArrowRight: 1, ArrowLeft: -1 }[e.key];
+      if (move) selectTab(tabs[(i + move + tabs.length) % tabs.length], true);
+      if (e.key === 'Home') selectTab(tabs[0], true);
+      if (e.key === 'End') selectTab(tabs[tabs.length - 1], true);
+    });
+  });
+  const fromHash = tabs.find(t => '#' + t.getAttribute('aria-controls') === location.hash);
+  if (fromHash) selectTab(fromHash);
+
+  // Field table filter.
+  const rows = [...document.querySelectorAll('#field-rows tr')];
+  const filterButtons = [...document.querySelectorAll('[data-filter]')];
+  function applyFilter(kind) {
+    let shown = 0;
+    rows.forEach(r => {
+      const match = kind === 'all' || r.dataset.kind.split(' ').includes(kind);
+      r.hidden = !match;
+      if (match) shown++;
+    });
+    filterButtons.forEach(b => b.setAttribute('aria-pressed', b.dataset.filter === kind));
+    document.getElementById('field-count').textContent = `Showing ${shown} of ${rows.length} fields.`;
+  }
+  filterButtons.forEach(b => b.addEventListener('click', () => applyFilter(b.dataset.filter)));
+  applyFilter('all');
+</script>
+</body>
+</html>
