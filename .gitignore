@@ -221,3 +221,9 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Output of scripts/quote_check.py (generated, not committed)
+checked_submissions.json
+
+# macOS
+.DS_Store

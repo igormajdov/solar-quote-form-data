@@ -1,0 +1,9 @@
+received_at,first_name,last_name,email,phone,street,city,state,zip,source
+2026-11-02T14:05:00Z,Dana,Whitfield,dana.whitfield@example.com,314-555-0101,1200 Maple Ave,St. Louis,MO,63110,web_form
+2026-11-03T10:22:00-06:00,Marcus,Ellery,marcus.ellery@example.com,(618) 555-0102,45 Oak Ridge Dr,Edwardsville,IL,62025,google_ads
+2026-11-04T13:40:00Z,Priya,Natarajan,  Priya.Natarajan@Example.COM ,636.555.0103,7 Cedar Ct,Chesterfield,MO,63017-1234,web_form
+2026-11-05T15:10:00Z,Tomas,Rivera,t.rivera@example.com,+1 314 555 0104,88 North Kingshighway Street,St. Louis,Missouri,63108,referral
+2026-11-09T18:30:00Z,Dana,Whitfield,DANA.WHITFIELD@example.com,314-555-0199,1200 Maple Avenue,St. Louis,MO,63110,web_form
+2026-11-12T20:00:00Z,M.,Ellery,m.ellery@example.com,618 555 0102,310 Main St,Collinsville,IL,62234,facebook
+2026-11-14T15:45:00Z,Jordan,Blake,jordan.blake@example.com,913-555-0107,22 Prairie Ln,Overland Park,KS,66210,web_form
+2026-11-15T17:05:00Z,Casey,Morgan,casey.morgan@example,314-555-01,9 Elm St,Kirkwood,MO,63122,web_form
